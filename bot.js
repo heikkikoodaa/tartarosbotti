@@ -14,7 +14,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
   if (!newPresence.activities) return false;
   newPresence.activities.forEach(activity => {
     if (activity.type == 'STREAMING') {
-      client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send(`@everyone ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`);
+      client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send(`${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`);
     }
   })
 });
