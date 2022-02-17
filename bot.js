@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const { Client, Intents, MessageEmbed } = require('discord.js');
-const { containsTwitchUrl, containsUrl } = require('./helpers');
+const { containsTwitchUrl, containsUrl, getGameArt, getGameId } = require('./helpers');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES] });
 const PREFIX = '!';
 
@@ -14,9 +14,40 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
   if (!newPresence.activities) return false;
   newPresence.activities.forEach(activity => {
     if (activity.type == 'STREAMING') {
-      client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send(`Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`);
-    }
-  })
+      getGameId(activity.state).then((Id) => {
+        if (Id.length > 0) {
+          getGameArt(Id[0].id).then((coverData) => {
+            let url = `https://images.igdb.com/igdb/image/upload/t_720p/${coverData[0].image_id}.jpg`;
+            const streamEmbed = new MessageEmbed()
+              .setTitle(activity.details)
+              .addFields(
+                { name: 'Peli', value: `${activity.state}` },
+              )
+              .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
+              .setImage(url)
+              .setTimestamp();
+            client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
+              content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
+              embeds: [streamEmbed]
+            });
+          });
+        } else {
+          const streamEmbed = new MessageEmbed()
+            .setTitle(activity.details)
+            .addFields(
+              { name: 'Peli', value: `${activity.state}` },
+            )
+            .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
+            .setImage(newPresence.user.avatarURL())
+            .setTimestamp();
+          client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
+            content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
+            embeds: [streamEmbed]
+          });
+        }
+      });
+    };
+  });
 });
 
 client.on('messageCreate', msg => {
