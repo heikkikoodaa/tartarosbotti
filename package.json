@@ -8,7 +8,7 @@
     "dev": "nodemon ."
   },
   "keywords": [],
-  "author": "",
+  "author": "torastrengel",
   "license": "ISC",
   "dependencies": {
     "@discordjs/rest": "^0.3.0",
