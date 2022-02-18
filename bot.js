@@ -50,37 +50,37 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
   // });
   if (!newPresence.activities) return false;
 
-  if (oldPresence.activities.length == 0 || oldPresence.activities[0].type == 'CUSTOM') {
+  if (oldPresence.activities[0].type == 'CUSTOM' || oldPresence.activities.length == 0) {
     if (!newPresence.activities.length == 0) {
       if (newPresence.activities[0].type == 'STREAMING') {
-        getGameId(activity.state).then((Id) => {
+        getGameId(newPresence.activities[0].state).then((Id) => {
           if (Id.length > 0) {
             getGameArt(Id[0].id).then((coverData) => {
               let url = `https://images.igdb.com/igdb/image/upload/t_720p/${coverData[0].image_id}.jpg`;
               const streamEmbed = new MessageEmbed()
-                .setTitle(activity.details)
+                .setTitle(newPresence.activities[0].details)
                 .addFields(
-                  { name: 'Peli', value: `${activity.state}` },
+                  { name: 'Peli', value: `${newPresence.activities[0].state}` },
                 )
                 .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
                 .setImage(url)
                 .setTimestamp();
               client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-                content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
+                content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${newPresence.activities[0].url}.`,
                 embeds: [streamEmbed]
               });
             });
           } else {
             const streamEmbed = new MessageEmbed()
-              .setTitle(activity.details)
+              .setTitle(newPresence.activities[0].details)
               .addFields(
-                { name: 'Peli', value: `${activity.state}` },
+                { name: 'Peli', value: `${newPresence.activities[0].state}` },
               )
               .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
               .setImage(newPresence.user.avatarURL())
               .setTimestamp();
             client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-              content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
+              content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${newPresence.activities[0].url}.`,
               embeds: [streamEmbed]
             });
           }
