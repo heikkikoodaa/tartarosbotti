@@ -50,7 +50,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
   // });
   if (!newPresence.activities) return false;
 
-  if (oldPresence.activities[0].type == 'CUSTOM' || oldPresence.activities.length == 0) {
+  if (oldPresence.activities.length == 0 || oldPresence.activities[0].type == 'CUSTOM') {
     if (!newPresence.activities.length == 0) {
       if (newPresence.activities[0].type == 'STREAMING') {
         getGameId(newPresence.activities[0].state).then((Id) => {
