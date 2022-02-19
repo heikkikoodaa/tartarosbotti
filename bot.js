@@ -4,93 +4,72 @@ const { Client, Intents, MessageEmbed } = require('discord.js');
 const { containsTwitchUrl, containsUrl, getGameArt, getGameId } = require('./helpers');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES] });
 const PREFIX = '!';
+let streamingUsers = [];
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
   client.user.setActivity('!komennot');
 });
 
-// client.on('presenceUpdate', (oldPresence, newPresence) => {
-//   // if (!newPresence.activities) return false;
-//   // newPresence.activities.forEach(activity => {
-//   //   if (activity.type == 'STREAMING') {
-//   //     getGameId(activity.state).then((Id) => {
-//   //       if (Id.length > 0) {
-//   //         getGameArt(Id[0].id).then((coverData) => {
-//   //           let url = `https://images.igdb.com/igdb/image/upload/t_720p/${coverData[0].image_id}.jpg`;
-//   //           const streamEmbed = new MessageEmbed()
-//   //             .setTitle(activity.details)
-//   //             .addFields(
-//   //               { name: 'Peli', value: `${activity.state}` },
-//   //             )
-//   //             .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
-//   //             .setImage(url)
-//   //             .setTimestamp();
-//   //           client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-//   //             content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
-//   //             embeds: [streamEmbed]
-//   //           });
-//   //         });
-//   //       } else {
-//   //         const streamEmbed = new MessageEmbed()
-//   //           .setTitle(activity.details)
-//   //           .addFields(
-//   //             { name: 'Peli', value: `${activity.state}` },
-//   //           )
-//   //           .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
-//   //           .setImage(newPresence.user.avatarURL())
-//   //           .setTimestamp();
-//   //         client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-//   //           content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activity.url}.`,
-//   //           embeds: [streamEmbed]
-//   //         });
-//   //       }
-//   //     });
-//   //   };
-//   // });
-//   if (!newPresence.activities) return false;
+client.on('presenceUpdate', (oldPresence, newPresence) => {
+  const {displayName: username} = newPresence.member;
 
-//   newPresence.activities
+  if (newPresence.member.presence.activities.length == 0) {
+    if (streamingUsers.includes(username)) {
+      streamingUsers = streamingUsers.filter(user => user !== username);
+      console.log(`${username} has stopped streaming!`);
+    } else {
+      return false;
+    }
+  }
 
-//   if (oldPresence.activities != null && oldPresence.activities.length == 0 || oldPresence.activities[0].type == 'CUSTOM') {
-//     if (!newPresence.activities.length == 0) {
-//       if (newPresence.activities[0].type == 'STREAMING') {
-//         getGameId(newPresence.activities[0].state).then((Id) => {
-//           if (Id.length > 0) {
-//             getGameArt(Id[0].id).then((coverData) => {
-//               let url = `https://images.igdb.com/igdb/image/upload/t_720p/${coverData[0].image_id}.jpg`;
-//               const streamEmbed = new MessageEmbed()
-//                 .setTitle(newPresence.activities[0].details)
-//                 .addFields(
-//                   { name: 'Peli', value: `${newPresence.activities[0].state}` },
-//                 )
-//                 .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
-//                 .setImage(url)
-//                 .setTimestamp();
-//               client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-//                 content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${newPresence.activities[0].url}.`,
-//                 embeds: [streamEmbed]
-//               });
-//             });
-//           } else {
-//             const streamEmbed = new MessageEmbed()
-//               .setTitle(newPresence.activities[0].details)
-//               .addFields(
-//                 { name: 'Peli', value: `${newPresence.activities[0].state}` },
-//               )
-//               .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
-//               .setImage(newPresence.user.avatarURL())
-//               .setTimestamp();
-//             client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
-//               content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${newPresence.activities[0].url}.`,
-//               embeds: [streamEmbed]
-//             });
-//           }
-//         });
-//       }
-//     }
-//   }
-// });
+  if (newPresence.member.presence.activities.length > 0 && newPresence.member.presence.activities[0].type == 'STREAMING' && !streamingUsers.includes(username)) {
+    streamingUsers.push(username);
+    console.log(`${username} started streaming!`);
+    const {state: gameName, url: activityUrl, details} = newPresence.member.presence.activities[0];
+    getGameId(gameName).then((Id) => {
+      if (Id.length > 0) {
+        getGameArt(Id[0].id).then((coverData) => {
+          let url = `https://images.igdb.com/igdb/image/upload/t_720p/${coverData[0].image_id}.jpg`;
+          const streamEmbed = new MessageEmbed()
+            .setTitle(details)
+            .addFields(
+              { name: 'Peli', value: `${gameName}` },
+            )
+            .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
+            .setImage(url)
+            .setTimestamp();
+          client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
+            content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activityUrl}.`,
+            embeds: [streamEmbed]
+          });
+        });
+      } else {
+        const streamEmbed = new MessageEmbed()
+          .setTitle(details)
+          .addFields(
+            { name: 'Peli', value: `${gameName}` },
+          )
+          .setAuthor({ name: `${newPresence.user.username}`, iconURL: `${newPresence.user.avatarURL()}` })
+          .setImage(newPresence.user.avatarURL())
+          .setTimestamp();
+        client.channels.cache.get(process.env.STRIIMI_KANAVA_ID).send({
+          content: `Hei kaikki! ${newPresence.user.tag} aloitti striimin osoitteessa ${activityUrl}.`,
+          embeds: [streamEmbed]
+        });
+      }
+    });
+  }
+  
+  if (streamingUsers.includes(username) && newPresence.member.presence.activities.length == 0) {
+    streamingUsers = streamingUsers.filter(user => user !== username);
+    console.log(`${username} has stopped streaming!`);
+  }
+
+  if (streamingUsers.length > 0) {
+    console.log('Users streaming:', streamingUsers);
+  }
+});
 
 client.on('messageCreate', msg => {
   if (msg.author.bot) return;
