@@ -32,7 +32,7 @@ client.on('presenceUpdate', async (oldPresence, newPresence) => {
   }
 
   //Tarkista onko käyttäjän uusi tila 'STREAMING' ja että uusi aktiviteettilista ei ole tyhjä
-  if (newPresence.member.presence.activities > 0 && newPresence.member.presence.activities[0].type == 'STREAMING') {
+  if (newPresence.member.presence.activities.length > 0 && newPresence.member.presence.activities[0].type == 'STREAMING') {
     //Tarkista löytyykö käyttäjä jo muistista - jos ei, käyttäjä aloittaa striiminsä ja kanavalle lähetetään ilmoitus
     const userStreaming = await redisClient.get(username);
     if (userStreaming == null) {
